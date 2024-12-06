@@ -2,14 +2,22 @@ import json
 import requests
 from request_retrier import retry_request_till_success
 import os
+import base64
 
 
 INTERNET_TRAFFIC_API_URL = "https://mw-api.vodafone.ua/prepaybalance/tmf-api/prepayBalanceManagement/v4/bucket"
 
 
-HEADERS = os.getenv("HEADERS")
-if HEADERS:
-    headers = json.loads(HEADERS)
+def decode_base64_header_json(base64_string):
+    return base64.decodebytes(bytes(base64_string, encoding='utf-8')).decode()
+
+
+headers = os.getenv("HEADERS")
+if "Authorization" not in headers:
+    headers = headers.encode('raw_unicode_escape').decode('unicode_escape')
+    headers = decode_base64_header_json(headers)
+if headers:
+    headers = json.loads(headers)
 elif os.path.exists("headers.json"):
     with open('headers.json') as headers_file:
         headers = json.load(headers_file)
