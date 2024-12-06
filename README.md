@@ -8,6 +8,8 @@ Also I wanted to explore raw Telegram Bot API without using any frameworks. Just
 
 I know getting headers for non-technical user might be complicated, but I can help you – reach out to me in Telegram @kopyl.
 
+I might record the video on how to set this thing up for a non-technical people, but maybe later.
+
 ### Prerequisites:
 
 You have to know how to create your own Telegram with Botfather and exctract headers from Vodafone dashboard logged in (https://my.vodafone.ua/primary/main/home).
