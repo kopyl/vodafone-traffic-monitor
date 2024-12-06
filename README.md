@@ -32,7 +32,7 @@ You might want to specify the amount of seconds the bot is going to wait between
 
 ### If you want to build it yourself:
 
-`docker build -t kopyl/vodafone-traffic-monitor .`
+`docker build --platform=linux/amd64 -t kopyl/vodafone-traffic-monitor .`
 (you can replace the image name from `kopyl/vodafone-traffic-monitor` to whatever you want)
 
 ### Example docker run command:
