@@ -31,6 +31,19 @@ You can find already built Docker image at https://hub.docker.com/repository/doc
 
 You might want to specify the amount of seconds the bot is going to wait between fetching the data from Vodafone with `SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS` environment variable. The default is 300 seconds.
 
+Here is an example of how you can that base64 string in Python:
+
+```
+import base64
+
+
+headers = {
+    "Sec-Fetch-Site": "same-site",
+}
+json_bytes = base64.encodebytes(json.dumps(headers).encode())
+json_bytes.decode()
+```
+
 ### If you want to build it yourself:
 
 `docker build --platform=linux/amd64 -t kopyl/vodafone-traffic-monitor .`
