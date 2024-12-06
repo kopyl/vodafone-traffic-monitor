@@ -28,7 +28,8 @@ def make_keyboard_with_text(text):
                     "text": text
                 }
             ]
-        ]
+        ],
+        "resize_keyboard": True
     }
     return json.dumps(reply_keyboard_markup)
 
