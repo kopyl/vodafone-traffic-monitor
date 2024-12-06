@@ -22,9 +22,10 @@ You have to know how to create your own Telegram with Botfather and exctract hea
 
 You can find already built Docker image at https://hub.docker.com/repository/docker/kopyl/vodafone-traffic-monitor/general, so you don't need to build (or download) to run it, just run the `docker run...` command from the steps below and enjoy:
 
-1. Prepare headers string to put between `HEADERS='` and `'`
+1. Prepare headers string in base64 to put between `HEADERS='` and `'`
 2. Prepare Telegram bot token to put between `BOT_TOKEN='` and `'`
 3. Prepare your Telegram user ID
+4. Run the build command:
    `docker run --env HEADERS='' --env BOT_TOKEN='' --name vodafone-traffic-monitor -d kopyl/vodafone-traffic-monitor`
    (you can replace the image name from `kopyl/vodafone-traffic-monitor` to whatever you want)
 
@@ -38,27 +39,81 @@ You might want to specify the amount of seconds the bot is going to wait between
 ### Example docker run command:
 
 ```
-docker run --env HEADERS='{
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en",
-    "Authorization": "Bearer ...",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "Content-Type": "application/json",
-    "Origin": "https://my.vodafone.ua",
-    "Pragma": "no-cache",
-    "Referer": "https://my.vodafone.ua/",
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Site": "same-site",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "X-APP-VERSION": "1.0.0",
-    "X-DEVICE-SOURCE": "MacOS",
-    "profile": "COUNTERS-DATA",
-    "sec-ch-ua": "\"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "\"macOS\""
-}' --env BOT_TOKEN='...' --name vodafone-traffic-monitor -d kopyl/vodafone-traffic-monitor
+docker run --env HEADERS='...' --env BOT_TOKEN='...' --name vodafone-traffic-monitor -d kopyl/vodafone-traffic-monitor
 ```
 
 (... shall be your own data)
+
+---
+
+### How to deploy it on Azure:
+
+##### 1. Create Azure container registry
+
+(you might want to use Dockerhub for that, but i've been facing some rate limiting from either Dockerhub or Azure or both, so I decided that it's better to stick to Azure)
+
+```
+az acr create --resource-group test_group \
+  --name vodafonetrafficmonitorregistry --sku Basic
+```
+
+(you might want to replace the name `vodafonetrafficmonitorregistry` with yours and make sure you specify the resource group you have here and in all the places below)
+
+##### 2. Push the image to the registry
+
+1. Login with `az acr login --name vodafonetrafficmonitorregistry` (keep the same name)
+2. Tag with `docker tag kopyl/vodafone-traffic-monitor vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor` (to ensure stable versions each deployment, tag each new build with the new version like `vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor:4`)
+3. And finally push to the registry: `doker push vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor`
+
+##### 3. Now you need credentials for deploying the container to Azure Container instances service
+
+```
+az acr update -n vodafonetrafficmonitorregistry --admin-enabled true
+az acr credential show --name vodafonetrafficmonitorregistry
+```
+
+##### 4. Now let's create a container:
+
+```
+az container create \
+    --resource-group test_group \
+    --name vodafone-traffic-monitor \
+    --image vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor:6 \
+    --os-type Linux \
+    --cpu 1 \
+    --memory 2 \
+    --registry-username vodafonetrafficmonitorregistry \
+    --registry-password ... \
+    --environment-variables HEADERS='...' BOT_TOKEN='...'
+```
+
+(Replace all ... with real data)
+
+##### 5. Verify container is created
+
+```
+az container show \
+    --resource-group test_group \
+    --name vodafone-traffic-monitor \
+    --query "{FQDN:ipAddress.fqdn,ProvisioningState:provisioningState}" \
+    --out table
+```
+
+##### 6. Make sure you have all your environment variables set:
+
+Verify it with
+
+```
+az container show \
+    --resource-group test_group \
+    --name vodafone-traffic-monitor \
+    --query "containers[0].environmentVariables"
+```
+
+##### Now let's sit back end watch the logs:
+
+```
+az container attach \
+    --resource-group test_group
+    --name vodafone-traffic-monitor
+```
