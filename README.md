@@ -117,3 +117,7 @@ az container attach \
     --resource-group test_group
     --name vodafone-traffic-monitor
 ```
+
+##### If you ever want to delete it, feel free:
+
+`az container delete --resource-group test_group --name vodafone-traffic-monitor`
