@@ -1,15 +1,32 @@
-import requests
-import time
 import os
-import json
-from request_retrier import retry_request_till_success
+
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from telegram import ReplyKeyboardMarkup, KeyboardButton
+
+import time
 from database import insert_row, get_is_changed_from_last_check
 from network import get_total_current_gb_count
+
+import asyncio
 
 
 SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS = os.getenv("SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS") or 300
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GET_UPDATES_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates"
+
+WELCOME_MESSAGE = (
+    "Press on a button to start checking for updates\n"
+    "When you press the Stop button, the bot will no longer be fetching the data, "
+    "but the confirmation message about it might come after some while"
+)
+START_KEYBOARD_TEXT = "Start data monitoring"
+STARTED_MESSAGE = "Started"
+END_KEYBOARD_TEXT = "Stop data monitoring"
+STOPPED_MESSAGE = "Stopped"
+
+
+start_keyboard = ReplyKeyboardMarkup([[KeyboardButton(START_KEYBOARD_TEXT)]], resize_keyboard=True)
+end_keyboard = ReplyKeyboardMarkup([[KeyboardButton(END_KEYBOARD_TEXT)]], resize_keyboard=True)
 
 
 def check_update_and_save() -> bool:
@@ -20,112 +37,48 @@ def check_update_and_save() -> bool:
     return is_changed_from_last_check, total_current_gb_count
 
 
-def make_keyboard_with_text(text):
-    reply_keyboard_markup = {
-        "keyboard": [
-            [
-                {
-                    "text": text
-                }
-            ]
-        ],
-        "resize_keyboard": True
-    }
-    return json.dumps(reply_keyboard_markup)
+future_reference = {"ref": None}
 
-def respond_with_a_message_to_user(text, user_id, keyboard_button_text=""):
-    if text is None:
-        return
-    params = {
-        "chat_id": user_id,
-        "text": text,
-        "reply_markup": make_keyboard_with_text(keyboard_button_text)
-    }
-    URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    response = retry_request_till_success(lambda: requests.get(URL, params=params))()
-    return response.json()
-
-
-def pin_message(chat_id, message_id):
-    params = {
-        "chat_id": chat_id,
-        "message_id": message_id
-    }
-    URL = f"https://api.telegram.org/bot{BOT_TOKEN}/pinChatMessage"
-    retry_request_till_success(lambda: requests.get(URL, params=params))()
-
-
-text = ""
-last_update_id = -1
-params = {
-    'offset': last_update_id,
-    'timeout': 0,
-    'allowed_updates': ['message']
-}
-
-update_count = 0
-keep_update_on_telegram_servers = False
-while True:
-    if keep_update_on_telegram_servers == True:
-        params['offset'] = -1
-    elif update_count != 0:
-        params['offset'] = last_update_id+1
-        params['timeout'] = 50
-
-    response = retry_request_till_success(
-        lambda: requests.get(GET_UPDATES_URL, params=params, timeout=params['timeout']+10)
-    )()
-    
-    try:
-        last_update_id = response.json()['result'][0]['update_id']
-        text = response.json()['result'][0]['message']['text']
-        user_id = response.json()['result'][0]['message']['from']['id']
-    except IndexError:
-        text = ""
-    except KeyError:
-        text = ""
-
-    message_to_send = None
-    sleep_for_sec = 0
-
-    if text == "/start":
-        respond_with_a_message_to_user(
-            (
-                "Press on a button to start checking for updates\n"
-                "When you press the Stop button, the bot will no longer be fetching the data, "
-                "but the confirmation message about it might come after some while"
-            ),
-            user_id,
-            "Start data monitoring"
-        )
-
-        last_update_id = response.json()['result'][0]['update_id']
-
-    elif text == "Start data monitoring":
-        sleep_for_sec = SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS
-        if keep_update_on_telegram_servers == False:
-            respond_with_a_message_to_user(
-                "Started",
-                user_id,
-                (
-                    "Stop data monitoring (might take up to "
-                    f"{SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS} seconds) "
-                    "to receive the confirmation message"
-                )
-            )
-        keep_update_on_telegram_servers = True
-
+async def monitor_vodafone_API(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    while True:
         is_changed_from_last_check, total_current_gb_count = check_update_and_save()
         if is_changed_from_last_check:
-            sent_message = respond_with_a_message_to_user(f'{total_current_gb_count}GB left', user_id)
-            sent_message_id = sent_message['result']['message_id']
-            pin_message(user_id, sent_message_id)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'{total_current_gb_count}GB left', reply_markup=end_keyboard)
+        await asyncio.sleep(SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS)
 
-    elif text.startswith("Stop data monitoring (might take up to"):
-        sleep_for_sec = 0
-        respond_with_a_message_to_user("Stopped", user_id, "Start data monitoring")
-        keep_update_on_telegram_servers = False
-        last_update_id = response.json()['result'][0]['update_id']
-    
-    update_count += 1
-    time.sleep(sleep_for_sec)
+async def handle_start_data_monitoring(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text != START_KEYBOARD_TEXT:
+        return
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=STARTED_MESSAGE, reply_markup=end_keyboard)
+    ref = asyncio.ensure_future(monitor_vodafone_API(update, context))
+    future_reference["ref"] = ref
+
+
+async def handle_stop_data_monitoring(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text != END_KEYBOARD_TEXT:
+        return
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=STOPPED_MESSAGE, reply_markup=start_keyboard)
+    future_reference["ref"].cancel() if future_reference["ref"] else ...
+
+
+async def start_bot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=WELCOME_MESSAGE, reply_markup=start_keyboard)
+
+async def process_text_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await handle_start_data_monitoring(update, context)
+    await handle_stop_data_monitoring(update, context)
+
+
+
+if __name__ == "__main__":
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    start_handler = CommandHandler('start', start_bot_command)
+    application.add_handler(start_handler)
+
+    text_messages_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), process_text_messages)
+    application.add_handler(text_messages_handler)
+
+    application.run_polling()

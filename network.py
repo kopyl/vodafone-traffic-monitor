@@ -12,7 +12,7 @@ def decode_base64_header_json(base64_string):
     return base64.decodebytes(bytes(base64_string, encoding='utf-8')).decode()
 
 
-headers = os.getenv("HEADERS")
+headers = os.getenv("HEADERS", "")
 if "Authorization" not in headers:
     headers = headers.encode('raw_unicode_escape').decode('unicode_escape')
     headers = decode_base64_header_json(headers)
