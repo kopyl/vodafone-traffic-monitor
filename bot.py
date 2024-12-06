@@ -80,7 +80,7 @@ while True:
         text = response.json()['result'][0]['message']['text']
         user_id = response.json()['result'][0]['message']['from']['id']
     except IndexError:
-        ...
+        text = ""
     except KeyError:
         text = ""
 
