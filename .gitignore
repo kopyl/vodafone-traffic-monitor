@@ -1,0 +1,4 @@
+*.ipynb
+.dockerignore
+*.db
+*.json
