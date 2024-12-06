@@ -14,11 +14,7 @@ import asyncio
 SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS = os.getenv("SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS") or 300
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-WELCOME_MESSAGE = (
-    "Press on a button to start checking for updates\n"
-    "When you press the Stop button, the bot will no longer be fetching the data, "
-    "but the confirmation message about it might come after some while"
-)
+WELCOME_MESSAGE = "Press on a button below to start checking for updates"
 START_KEYBOARD_TEXT = "Start data monitoring"
 STARTED_MESSAGE = "Started"
 END_KEYBOARD_TEXT = "Stop data monitoring"
