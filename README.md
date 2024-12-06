@@ -18,6 +18,8 @@ You have to know how to create your own Telegram with Botfather and exctract hea
 
 ### Run with Docker:
 
+You can find already built Docker image at https://hub.docker.com/repository/docker/kopyl/vodafone-traffic-monitor/general, so you don't need to build (or download) to run it, just run the `docker run...` command from the steps below and enjoy:
+
 1. Prepare headers string to put between `HEADERS='` and `'`
 2. Prepare Telegram bot token to put between `BOT_TOKEN='` and `'`
 3. Prepare your Telegram user ID
