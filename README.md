@@ -75,7 +75,7 @@ az acr create --resource-group test_group \
 ##### 2. Push the image to the registry
 
 1. Login with `az acr login --name vodafonetrafficmonitorregistry` (keep the same name)
-2. Tag with `docker tag kopyl/vodafone-traffic-monitor vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor` (to ensure stable version updates each deployment, tag each new build with the new version like `vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor:4`)
+2. Tag with `docker tag kopyl/vodafone-traffic-monitor vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor` (to ensure stable version updates each deployment, tag each new build with a new version like `vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor:4`)
 3. And finally push to the registry: `doker push vodafonetrafficmonitorregistry.azurecr.io/vodafone-traffic-monitor`
 
 ##### 3. Now you need credentials for deploying the container to Azure Container instances service
