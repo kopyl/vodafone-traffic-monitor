@@ -9,7 +9,7 @@ ADD Dockerfile .
 
 ADD database.py .
 ADD network.py .
-ADD request_retrier.py .
+ADD request_retrier_async.py .
 ADD bot.py .
 
 CMD ["python", "bot.py"]

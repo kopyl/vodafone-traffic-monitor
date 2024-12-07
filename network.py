@@ -1,6 +1,6 @@
 import json
 import requests
-from request_retrier import retry_request_till_success
+from request_retrier_async import retry_request_till_success
 import os
 import base64
 
