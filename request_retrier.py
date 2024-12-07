@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import requests
+import asyncio
 
 
 p = print
@@ -44,12 +45,12 @@ def retry_request_till_success(
     request: requests.models.Request
 ) -> requests.models.Response:
 
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         retry_time_count = 1
         while True:
             retry_in_seconds = define_retry_delay_seconds(retry_time_count)
             try:
-                response = request(*args, **kwargs)
+                response = await request(*args, **kwargs)
                 if response == None:  # doc.id#13
                     p("There is no request to retry")
                     return
@@ -63,7 +64,7 @@ def retry_request_till_success(
                         f"Status_code – {response.status_code} "
                         f"Will retry again in {retry_in_seconds} seconds"
                     )
-                    time.sleep(retry_in_seconds)
+                    await asyncio.sleep(retry_in_seconds)
                     retry_time_count += 1
 
             except (
@@ -76,7 +77,7 @@ def retry_request_till_success(
                     f"Timed out with error {error}"
                     f"Will retry again in {retry_in_seconds} seconds"
                 )
-                time.sleep(retry_in_seconds)
+                await asyncio.sleep(retry_in_seconds)
                 retry_time_count += 1
             except requests.exceptions.ConnectionError as e:
                 sleep_time = 10
@@ -86,5 +87,5 @@ def retry_request_till_success(
                     "No connection to internet... "
                     f"Will retry again in {sleep_time} seconds"
                 )
-                time.sleep(sleep_time)
+                await asyncio.sleep(sleep_time)
     return wrapper

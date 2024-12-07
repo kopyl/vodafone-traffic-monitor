@@ -25,9 +25,9 @@ start_keyboard = ReplyKeyboardMarkup([[KeyboardButton(START_KEYBOARD_TEXT)]], re
 end_keyboard = ReplyKeyboardMarkup([[KeyboardButton(END_KEYBOARD_TEXT)]], resize_keyboard=True)
 
 
-def check_update_and_save() -> bool:
+async def check_update_and_save() -> bool:
     timestamp = int(time.time())
-    total_current_gb_count = get_total_current_gb_count()
+    total_current_gb_count = await get_total_current_gb_count()
     is_changed_from_last_check = get_is_changed_from_last_check(total_current_gb_count)
     insert_row((timestamp, total_current_gb_count, is_changed_from_last_check))
     return is_changed_from_last_check, total_current_gb_count
@@ -37,7 +37,7 @@ future_reference = {"ref": None}
 
 async def monitor_vodafone_API(update: Update, context: ContextTypes.DEFAULT_TYPE):
     while True:
-        is_changed_from_last_check, total_current_gb_count = check_update_and_save()
+        is_changed_from_last_check, total_current_gb_count = await check_update_and_save()
         if is_changed_from_last_check:
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f'{total_current_gb_count}GB left', reply_markup=end_keyboard)
         await asyncio.sleep(SECONDS_DELAY_BETWEEN_VODAFONE_API_REQUESTS)

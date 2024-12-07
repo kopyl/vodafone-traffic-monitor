@@ -47,7 +47,12 @@ def get_total_available_gb_of_interner_traffic(response):
     return available_buckets, available_gb_counts, total_gb_count
 
 
-def get_total_current_gb_count():
-    response = retry_request_till_success(lambda: requests.get(INTERNET_TRAFFIC_API_URL, headers=headers))()
+@retry_request_till_success
+async def make_async_request():
+    return requests.get(INTERNET_TRAFFIC_API_URL, headers=headers)
+
+
+async def get_total_current_gb_count():
+    response = await make_async_request()
     total_gb_count = get_total_available_gb_of_interner_traffic(response)[-1]
     return total_gb_count
