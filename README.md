@@ -12,7 +12,7 @@ I might record the video on how to set this thing up for a non-technical people,
 
 ### Prerequisites:
 
-You have to know how to create your own Telegram with Botfather and exctract headers from Vodafone dashboard logged in (https://my.vodafone.ua/primary/main/home).
+You have to know how to create your own Telegram bot with Botfather and exctract headers from Vodafone dashboard logged in (https://my.vodafone.ua/primary/main/home).
 
 ### Do before launching this:
 
