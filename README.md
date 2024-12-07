@@ -97,7 +97,7 @@ az container create \
     --memory 2 \
     --registry-username vodafonetrafficmonitorregistry \
     --registry-password ... \
-    --environment-variables HEADERS='...' BOT_TOKEN='...'
+    --environment-variables HEADERS='...' BOT_TOKEN='...' PYTHONUNBUFFERED=1
 ```
 
 (Replace all ... with real data)
